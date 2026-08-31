@@ -16,6 +16,11 @@ services:
     networks:
       - smh-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -57,13 +62,187 @@ services:
     networks:
       - smh-network
 
+  # --- Backend Microservices ---
+
+  api-gateway:
+    build: ./backend/api-gateway
+    container_name: smh-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-mySecretKey123456789012345678901234567890}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  auth-service:
+    build: ./backend/auth-service
+    container_name: smh-auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      JWT_SECRET: ${JWT_SECRET:-mySecretKey123456789012345678901234567890}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  catalog-service:
+    build: ./backend/catalog-service
+    container_name: smh-catalog-service
+    ports:
+      - "8082:8082"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  inventory-service:
+    build: ./backend/inventory-service
+    container_name: smh-inventory-service
+    ports:
+      - "8083:8083"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  order-service:
+    build: ./backend/order-service
+    container_name: smh-order-service
+    ports:
+      - "8084:8084"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      SERVICES_INVENTORY_URL: http://inventory-service:8083
+    depends_on:
+      postgres:
+        condition: service_healthy
+      inventory-service:
+        condition: service_started
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  payment-service:
+    build: ./backend/payment-service
+    container_name: smh-payment-service
+    ports:
+      - "8085:8085"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  notification-service:
+    build: ./backend/notification-service
+    container_name: smh-notification-service
+    ports:
+      - "8086:8086"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  ai-service:
+    build: ./backend/ai-service
+    container_name: smh-ai-service
+    ports:
+      - "8087:8087"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  analytics-service:
+    build: ./backend/analytics-service
+    container_name: smh-analytics-service
+    ports:
+      - "8088:8088"
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/smart_mobile_hub
+      DATABASE_USERNAME: ${DATABASE_USERNAME:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  # --- Frontend ---
+
+  frontend:
+    build: ./frontend
+    container_name: smh-frontend
+    ports:
+      - "3001:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8080
+    depends_on:
+      - api-gateway
+    networks:
+      - smh-network
+    restart: unless-stopped
+
+  # --- Observability ---
+
   jaeger:
     image: jaegertracing/all-in-one:latest
     container_name: smh-jaeger
     ports:
-      - "16686:16686" # Web UI
-      - "4317:4317"   # OTLP gRPC
-      - "4318:4318"   # OTLP HTTP
+      - "16686:16686"
+      - "4317:4317"
+      - "4318:4318"
     networks:
       - smh-network
 
