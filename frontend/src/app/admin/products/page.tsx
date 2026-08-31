@@ -18,7 +18,7 @@ export default function AdminProductsPage() {
   const { data, isLoading } = useQuery({
     queryKey: ['admin-products', page],
     queryFn: async () => {
-      const res = await api.get<Page<Product>>(`/api/v1/catalog/products?page=${page}&size=15`);
+      const res = await api.get<Page<Product>>(`/api/v1/products?page=${page}&size=15`);
       return res.data;
     },
     enabled: isAdmin,

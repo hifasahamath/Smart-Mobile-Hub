@@ -20,7 +20,7 @@ export default function ProductDetailPage() {
   const { data: product, isLoading } = useQuery({
     queryKey: ['product', slug],
     queryFn: async () => {
-      const res = await api.get<Product>(`/api/v1/catalog/products/slug/${slug}`);
+      const res = await api.get<Product>(`/api/v1/products/slug/${slug}`);
       return res.data;
     },
   });

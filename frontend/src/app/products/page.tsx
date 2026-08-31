@@ -23,7 +23,7 @@ function ProductsContent() {
   const { data, isLoading, error } = useQuery({
     queryKey,
     queryFn: async () => {
-      let path = `/api/v1/catalog/products?page=${page}&size=12`;
+      let path = `/api/v1/products?page=${page}&size=12`;
       if (category) path += `&category=${category}`;
       if (brand) path += `&brand=${brand}`;
       if (search) path += `&search=${search}`;
