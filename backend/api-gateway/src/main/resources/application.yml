@@ -1,5 +1,86 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: api-gateway
-server:
-  port: 8080
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_UNIQUE
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://localhost:3001"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - PATCH
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+            maxAge: 3600
+      routes:
+        # Auth Service
+        - id: auth-service
+          uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/auth/**
+
+        # Catalog Service
+        - id: catalog-service
+          uri: ${CATALOG_SERVICE_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/products/**,/api/v1/categories/**,/api/v1/brands/**
+
+        # Inventory Service
+        - id: inventory-service
+          uri: ${INVENTORY_SERVICE_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/inventory/**
+
+        # Order Service
+        - id: order-service
+          uri: ${ORDER_SERVICE_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/orders/**,/api/v1/delivery-zones/**
+
+        # Payment Service
+        - id: payment-service
+          uri: ${PAYMENT_SERVICE_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/payments/**
+
+        # Notification Service
+        - id: notification-service
+          uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/notifications/**
+
+        # AI Service
+        - id: ai-service
+          uri: ${AI_SERVICE_URL:http://localhost:8087}
+          predicates:
+            - Path=/api/v1/ai/**
+
+        # Analytics Service
+        - id: analytics-service
+          uri: ${ANALYTICS_SERVICE_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/v1/analytics/**
+
+jwt:
+  secret: ${JWT_SECRET:8a892b19f187a5369bb9c07e0c8b05691b017b3c43232c7e008d3369a4e40db73c68b6}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
