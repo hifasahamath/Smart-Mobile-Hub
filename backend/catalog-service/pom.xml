@@ -9,7 +9,7 @@
     </parent>
     <artifactId>catalog-service</artifactId>
     <name>catalog-service</name>
-    <description>catalog-service for Smart Mobile Hub</description>
+    <description>Catalog Service for Smart Mobile Hub — Products, Categories, Brands, Variants, SKUs</description>
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -32,6 +32,14 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
+        <!-- OpenAPI / Swagger -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.5.0</version>
+        </dependency>
+
+        <!-- Test -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
